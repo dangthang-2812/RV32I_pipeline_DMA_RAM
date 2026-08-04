@@ -19,7 +19,7 @@ module control_unit (
     output wire [1:0]  WBSel
 );
 
-    wire	   ALUOp;
+    wire	   [1:0] ALUOp;
     wire       Branch, Jump;
     reg        branch_taken;
     reg        BrUn_r;

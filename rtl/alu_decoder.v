@@ -2,7 +2,7 @@
 // ALU DECODER
 // =========================================================
 module alu_decoder (
-    input  wire 	  ALUOp,
+    input  wire [1:0] ALUOp,
     input  wire [2:0] funct3,
     input  wire       funct7_fif,
     input  wire [4:0] opcode_eff,    // // Used to different R-type vs I-type when ALUOp = 2'b10
@@ -18,6 +18,8 @@ module alu_decoder (
     localparam SRL_OP = 4'h6;
     localparam SRA_OP = 4'h7;
     localparam SLT_OP = 4'h8;
+	localparam SLTU_OP = 4'h9;
+	localparam LUI_OP = 4'd10;
 
     localparam OP_R = 5'b01100;
 
@@ -25,13 +27,13 @@ module alu_decoder (
 
     always @(*) begin
         case (ALUOp)
-            1'b0: ALUSel = ADD;   // always ADD
-            1'b1: begin // R-type or I-type ALU (OP_IMM)
+            2'b00: ALUSel = ADD;   // always ADD
+            2'b01: begin // R-type or I-type ALU (OP_IMM)
                 case (funct3)
                     3'b000:  ALUSel = (is_Rtype && funct7_fif) ? SUB : ADD; // ADD/ADDI/SUB
                     3'b001:  ALUSel = SLL_OP;
                     3'b010:  ALUSel = SLT_OP;
-                    3'b011:  ALUSel = SLT_OP;    // SLTU/SLTIU: ALU dont have
+                    3'b011:  ALUSel = SLTU_OP;    // SLTU/SLTIU
                     3'b100:  ALUSel = XOR_OP;
                     3'b101:  ALUSel = funct7_fif ? SRA_OP : SRL_OP; // SRL/SRA, SRLI/SRAI
                     3'b110:  ALUSel = OR_OP;
@@ -39,7 +41,7 @@ module alu_decoder (
                     default: ALUSel = ADD;
                 endcase
             end
-
+			2'b10: ALUSel = LUI_OP; 
             default: ALUSel = ADD;
         endcase
     end
