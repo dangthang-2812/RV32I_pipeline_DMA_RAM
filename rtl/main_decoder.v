@@ -9,7 +9,7 @@ module main_decoder (
     output reg        ASel,
     output reg        BSel,
     output reg        BrUn,
-    output reg		  ALUOp,        // for ALU decoder
+    output reg	[1:0] ALUOp,        // for ALU decoder
     output reg         MemRW,
     output reg  [1:0] WBSel,
     output reg        Branch,       // is Branch 
@@ -35,8 +35,9 @@ module main_decoder (
     localparam IMM_J = 3'b100;
 
     // Intermediate, not final ALUSel
-    localparam ALUOP_ADD = 1'b0; // ADD
-    localparam ALUOP_RTYPE_ITYPE= 1'b1; // need funct3/funct7
+    localparam ALUOP_ADD = 2'b00; // ADD
+	localparam ALUOP_LUI= 2'b10;
+    localparam ALUOP_RTYPE_ITYPE= 2'b01; // need funct3/funct7
 
     always @(*) begin
         // default
@@ -124,7 +125,7 @@ module main_decoder (
                 BSel   = 1'b1;
                 RegWEn = 1'b1;
                 WBSel  = 2'b01;      // ALU_out
-                ALUOp  = ALUOP_ADD;  // Incorrect if rs1(x0-encoded) != 0
+                ALUOp  = ALUOP_LUI;  // Incorrect if rs1(x0-encoded) != 0
             end
 
             OP_AUIPC: begin
