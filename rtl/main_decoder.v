@@ -16,7 +16,13 @@ module main_decoder (
     output reg  [1:0] WBSel,
     output reg        arithmetic,    // ALU operation type
     output reg        i_type,        // I-type instruction
-    output reg        pass_b    // ALU operation type
+    output reg        pass_b,    // ALU operation type
+    output reg      Is_Branch,
+    output reg      Is_Jump,
+    output reg      Is_JALR,
+    output reg      Is_Load,
+    output reg      UsesRs1,
+    output reg      UsesRs2
 );
 
     // ---------------- Opcode map (Instruction[6:2]) ----------------
@@ -54,6 +60,12 @@ module main_decoder (
         arithmetic = 1'b0;
         i_type = 1'b0;
         pass_b = 1'b0;
+        Is_Branch = 1'b0;
+        Is_Jump = 1'b0;
+        Is_JALR = 1'b0;
+        Is_Load = 1'b0;
+        UsesRs1 = 1'b0;
+        UsesRs2 = 1'b0;
 
         case (opcode_eff)
             OP_LOAD: begin 
@@ -61,17 +73,23 @@ module main_decoder (
                 RegWEn = 1'b1;
                 BSel = 1'b1;
                 WBSel = WB_MEM;
+                UsesRs1 = 1'b1;
+                Is_Load = 1'b1;
             end
 
             OP_STORE: begin 
                 ImmSel = IMM_S;
                 BSel = 1'b1;
                 MemRW = 1'b1;
+                UsesRs1 = 1'b1;
+                UsesRs2 = 1'b1;
             end
 
             OP_REG: begin 
                 RegWEn = 1'b1;
                 arithmetic = 1'b1;
+                UsesRs1 = 1'b1;
+                UsesRs2 = 1'b1;
             end
 
             OP_IMM: begin 
@@ -80,12 +98,16 @@ module main_decoder (
                 BSel = 1'b1;
                 arithmetic = 1'b1;
                 i_type = 1'b1;
+                UsesRs1 = 1'b1;
             end
 
             OP_BRANCH: begin 
                 ImmSel = IMM_B;
                 ASel = 1'b1;
                 BSel = 1'b1;
+                UsesRs1 = 1'b1;
+                UsesRs2 = 1'b1;
+                Is_Branch = 1'b1;
 
                 case (funct3)
                     3'b000: PCSel = BrEq; // BEQ
@@ -111,6 +133,7 @@ module main_decoder (
                 ASel = 1'b1;
                 BSel = 1'b1;
                 WBSel = WB_PC4;
+                Is_Jump = 1'b1;
             end
 
             OP_JALR: begin 
@@ -120,6 +143,9 @@ module main_decoder (
                     RegWEn = 1'b1;
                     BSel = 1'b1;
                     WBSel = WB_PC4;
+                    UsesRs1 = 1'b1;
+                    Is_JALR = 1'b1;
+                    Is_Jump = 1'b1;
                 end
             end
 
