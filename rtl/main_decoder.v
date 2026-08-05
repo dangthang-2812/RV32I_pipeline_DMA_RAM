@@ -3,17 +3,20 @@
 // =========================================================
 module main_decoder (
     input  wire [4:0] opcode_eff,   // Instruction[6:2]
-
+    input  wire [2:0] funct3,
+    input  wire       BrEq,         // Branch Equal
+    input  wire       BrLT,         // Branch Less Than
+    output reg        PCSel,        // PC select
     output reg  [2:0] ImmSel,
     output reg        RegWEn,
+    output reg        BrUn,
     output reg        ASel,
     output reg        BSel,
-    output reg        BrUn,
-    output reg	[1:0] ALUOp,        // for ALU decoder
-    output reg         MemRW,
+    output reg        MemRW,
     output reg  [1:0] WBSel,
-    output reg        Branch,       // is Branch 
-    output reg        Jump          // is jal/jalr
+    output reg        arithmetic,    // ALU operation type
+    output reg        i_type,        // I-type instruction
+    output reg        pass_b    // ALU operation type
 );
 
     // ---------------- Opcode map (Instruction[6:2]) ----------------
@@ -21,7 +24,7 @@ module main_decoder (
     localparam OP_IMM     = 5'b00100; // I-type: ADDI/SLTI/.../SLLI/SRLI/SRAI
     localparam OP_AUIPC   = 5'b00101; // U-type
     localparam OP_STORE   = 5'b01000; // S-type
-    localparam OP_R       = 5'b01100; // R-type: ADD/SUB/...
+    localparam OP_REG     = 5'b01100; // R-type: ADD/SUB/...
     localparam OP_LUI     = 5'b01101; // U-type
     localparam OP_BRANCH  = 5'b11000; // B-type
     localparam OP_JALR    = 5'b11001; // I-type
@@ -35,109 +38,107 @@ module main_decoder (
     localparam IMM_J = 3'b100;
 
     // Intermediate, not final ALUSel
-    localparam ALUOP_ADD = 2'b00; // ADD
-	localparam ALUOP_LUI= 2'b10;
-    localparam ALUOP_RTYPE_ITYPE= 2'b01; // need funct3/funct7
+    localparam WB_MEM = 2'b00;
+    localparam WB_ALU = 2'b01;
+    localparam WB_PC4 = 2'b10;
 
     always @(*) begin
-        // default
-        ImmSel  = IMM_I;
-        RegWEn  = 1'b0;
-        ASel    = 1'b0;
-        BSel    = 1'b0;
-        BrUn    = 1'b0;
-        ALUOp   = ALUOP_ADD;
-        MemRW   = 1'b0;
-        WBSel   = 2'b01;
-        Branch  = 1'b0;
-        Jump    = 1'b0;
+        PCSel = 1'b0;
+        ImmSel = IMM_I;
+        RegWEn = 1'b0;
+        BrUn = 1'b0;
+        ASel = 1'b0;
+        BSel = 1'b0;
+        MemRW = 1'b0;
+        WBSel = WB_ALU;
+        arithmetic = 1'b0;
+        i_type = 1'b0;
+        pass_b = 1'b0;
 
         case (opcode_eff)
-            OP_R: begin
-                ImmSel = IMM_I;      // not use
-                ASel   = 1'b0;
-                BSel   = 1'b0;       // use DataB, not use Imm
-                RegWEn = 1'b1;
-                WBSel  = 2'b01;      // ALU_out
-                ALUOp  = ALUOP_RTYPE_ITYPE;
-            end
-
-            OP_IMM: begin
+            OP_LOAD: begin 
                 ImmSel = IMM_I;
-                ASel   = 1'b0;
-                BSel   = 1'b1;
                 RegWEn = 1'b1;
-                WBSel  = 2'b01;
-                ALUOp  = ALUOP_RTYPE_ITYPE;
+                BSel = 1'b1;
+                WBSel = WB_MEM;
             end
 
-            OP_LOAD: begin
-                ImmSel = IMM_I;
-                ASel   = 1'b0;
-                BSel   = 1'b1;
-                RegWEn = 1'b1;
-                MemRW  = 1'b0;       // read
-                WBSel  = 2'b00;      // DataR
-                ALUOp  = ALUOP_ADD;
-            end
-
-            OP_STORE: begin
+            OP_STORE: begin 
                 ImmSel = IMM_S;
-                ASel   = 1'b0;
-                BSel   = 1'b1;
-                RegWEn = 1'b0;
-                MemRW  = 1'b1;       // write
-                ALUOp  = ALUOP_ADD;
+                BSel = 1'b1;
+                MemRW = 1'b1;
             end
 
-            OP_BRANCH: begin
-                ImmSel = IMM_B;
-                ASel   = 1'b1;       // PC + imm -> target
-                BSel   = 1'b1;
-                RegWEn = 1'b0;
-                ALUOp  = ALUOP_ADD;
-                Branch = 1'b1;		//// BrUn depends on funct3 -> handled in top control_unit
-            end
-
-            OP_JAL: begin
-                ImmSel = IMM_J;
-                ASel   = 1'b1;       // PC + imm -> target
-                BSel   = 1'b1;
+            OP_REG: begin 
                 RegWEn = 1'b1;
-                WBSel  = 2'b10;      // PC+4
-                ALUOp  = ALUOP_ADD; // just ADD
-                Jump   = 1'b1;
+                arithmetic = 1'b1;
             end
 
-            OP_JALR: begin
+            OP_IMM: begin 
                 ImmSel = IMM_I;
-                ASel   = 1'b0;       // rs1 + imm -> target
-                BSel   = 1'b1;
                 RegWEn = 1'b1;
-                WBSel  = 2'b10;      // PC+4
-                ALUOp  = ALUOP_ADD; // just ADD
-                Jump   = 1'b1;
+                BSel = 1'b1;
+                arithmetic = 1'b1;
+                i_type = 1'b1;
             end
 
-            OP_LUI: begin
+            OP_BRANCH: begin 
+                ImmSel = IMM_B;
+                ASel = 1'b1;
+                BSel = 1'b1;
+
+                case (funct3)
+                    3'b000: PCSel = BrEq; // BEQ
+                    3'b001: PCSel = ~BrEq; // BNE
+                    3'b100: PCSel = BrLT; // BLT
+                    3'b101: PCSel = ~BrLT; // BGE
+                    3'b110: begin // BLTU
+                        PCSel = BrLT;
+                        BrUn = 1'b1;
+                    end
+                    3'b111: begin // BGEU
+                        PCSel = ~BrLT;
+                        BrUn = 1'b1;
+                    end
+                    default: PCSel = 1'b0;
+                endcase
+            end
+
+            OP_JAL: begin 
+                PCSel = 1'b1;
+                ImmSel = IMM_J;
+                RegWEn = 1'b1;
+                ASel = 1'b1;
+                BSel = 1'b1;
+                WBSel = WB_PC4;
+            end
+
+            OP_JALR: begin 
+                if (funct3 == 3'b000) begin
+                    PCSel = 1'b1;
+                    ImmSel = IMM_I;
+                    RegWEn = 1'b1;
+                    BSel = 1'b1;
+                    WBSel = WB_PC4;
+                end
+            end
+
+            OP_LUI: begin 
                 ImmSel = IMM_U;
-                ASel   = 1'b0;
-                BSel   = 1'b1;
                 RegWEn = 1'b1;
-                WBSel  = 2'b01;      // ALU_out
-                ALUOp  = ALUOP_LUI;  // Incorrect if rs1(x0-encoded) != 0
+                BSel = 1'b1;
+                pass_b = 1'b1;
             end
 
-            OP_AUIPC: begin
+            OP_AUIPC: begin 
                 ImmSel = IMM_U;
-                ASel   = 1'b1;       // PC + imm
-                BSel   = 1'b1;
                 RegWEn = 1'b1;
-                WBSel  = 2'b01;
-                ALUOp  = ALUOP_ADD; // just ADD
+                ASel = 1'b1;
+                BSel = 1'b1;
             end
 
-            default: begin end // FENCE/SYSTEM/undefined/... -> NOP
+            default: ;
+
         endcase
     end
 endmodule
