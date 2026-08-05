@@ -21,7 +21,7 @@ module MEM_WB_reg(
         end else begin
             ALU_out_W  <= ALU_out_M;
             DataR_W    <= DataR_M;
-            PC_Plus4_W <= PC_Plus4_M;s
+            PC_Plus4_W <= PC_Plus4_M;
             addrD_W    <= addrD_M;
             WBSel_W    <= WBSel_M;
             RegWEn_W   <= RegWEn_M;
