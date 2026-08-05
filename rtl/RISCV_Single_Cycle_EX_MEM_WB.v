@@ -6,31 +6,157 @@ module RISCV_Pipeline (
     input  wire        rst_n
 );
 
+    //Wire for IF Stage
+    wire [31:0] PC_in_F;
+    wire [31:0] PC_Plus4_F;
+    wire [31:0] PC_out_F;
+    wire [31:0] PC_F;
+    wire [31:0] Instr_F;
+
+    //Wire for ID Stage
+    wire [31:0] PC_D;
+    wire [31:0] PC_Plus4_D;
+    wire [31:0] Instr_D;
+
+    wire [4:0] addrA_D;
+    wire [4:0] addrB_D;
+    wire [4:0] addrD_D;
+    wire [31:0] DataA_D;
+    wire [31:0] DataB_D;
+    wire [31:0] Imm_D;
+    wire [2:0] funct3_D;
+
+    wire [3:0] ALUSel_D;
+    wire [1:0] WBSel_D;
+    wire       RegWEn_D;
+    wire       BrUn_D;
+    wire       ASel_D;
+    wire       BSel_D;
+    wire       MemRW_D;
+    wire       Is_Branch_D;
+    wire       Is_Jump_D;
+    wire       Is_JALR_D;
+    wire       Is_Load_D;
+    
+    // Wire for EX Stage 
+    wire [31:0] PC_E;
+    wire [31:0] PC_Plus4_E;
+    wire [31:0] Instr_E;
+    wire [31:0] DataA_E;
+    wire [31:0] DataB_E;
+    wire [31:0] Imm_E;
+    wire [4:0] addrA_E;
+    wire [4:0] addrB_E;
+    wire [4:0] addrD_E;
+    wire [2:0] funct3_E;
+    wire [3:0] ALUSel_E;
+    wire [1:0] WBSel_E;
+    wire       RegWEn_E;
+    wire       BrUn_E;
+    wire       ASel_E;
+    wire       BSel_E;
+    wire       MemRW_E;
+    wire       Is_Branch_E;
+    wire       Is_Jump_E;
+    wire       Is_JALR_E;
+    wire       Is_Load_E;
+
+    wire PCSel_E;
+    wire [31:0] Target_E;
+    wire [31:0] ALU_inA_E;
+    wire [31:0] ALU_inB_E;
+    wire [31:0] ALU_out_E;
+    wire [31:0] fwd_DataA_E;
+    wire [31:0] fwd_DataB_E;
+
+    // Signal for forwarding data to EX stage
+    wire [1:0] fwdA;
+    wire [1:0] fwdB;
+
+    // Wire for MEM Stage
+    wire [31:0] ALU_out_M;
+    wire [31:0] DataB_M;
+    wire [31:0] PC_Plus4_M;
+    wire [4:0] addrD_M;
+    wire [1:0] WBSel_M;
+    wire RegWEn_M;
+    wire MemRW_M;
+    wire [2:0] funct3_M;
+    wire [31:0] DataR_M;
+
+
+    // Wire for WB Stage
+    wire [31:0] ALU_out_W;
+    wire [31:0] DataR_W;
+    wire [31:0] PC_Plus4_W;
+    wire [4:0] addrD_W;
+    wire [1:0] WBSel_W;
+    wire RegWEn_W;
+    wire [31:0] DataD_W;
+
+    
+
+    //Wire for Hazard Detection module
+    wire stall_D;
+    wire stall_F;
+    wire flush_E;
+    wire IFID_stall;
+    wire IFID_flush;
+    wire IDEX_bubble;
+    wire UsesRs1_D;
+    wire UsesRs2_D;
+
+
+    // Wire for Control Unit
+    wire [4:0] opcode_eff;
+    wire funct7_fif;
+    wire [2:0] funct3;
+    wire BrEq_E;
+    wire BrLt_E;
+    wire Is_Branch;
+    wire Is_Jump;
+    wire Is_JALR;
+    wire Is_Load;
+    wire UsesRs1;
+    wire UsesRs2;
+    wire [2:0] ImmSel;
+    wire RegWEn;
+    wire BrUn;
+    wire ASel;
+    wire BSel;
+    wire [3:0] ALUSel;
+    wire MemRW;
+    wire [1:0] WBSel;
+
+    
+    
+
+
+
+
 // ================================================================
 //  IF stage
 // ================================================================
     // Uu tien: EX redirect > load-use stall
-    assign PC_en       = PCSel_E | ~stall_F;
-    assign PC_Plus4_F  = PC_F + 32'd4;
-    assign PC_next_F   = PCSel_E ? BrTarget_E : PC_Plus4_F;
-
-    assign Addr_instr_mem = {2'b0, PC_F[31:2]};
+    assign PC_Plus4_F  = PC_out_F + 32'd4;
+    assign PC_in_F   = PCSel_E ? Target_E : PC_Plus4_F;
+    assign PC_F      = PC_out_F;
 
     Program_Counter PC_inst (
         .clk    (clk),
         .rst_n  (rst_n),
-        .en     (PC_en),
-        .PC_in  (PC_next_F),
-        .PC_out (PC_F)
+        .stall (stall_F),
+        .PC_in  (PC_in_F),
+        .PC_out (PC_out_F)
     );
 
     Instruction_Memory IMEM_inst (
-        .addr (Addr_instr_mem),
+        .addr (PC_in_F),
         .inst (Instr_F)
     );
 
-    assign IFID_stall = stall_D & ~PCSel_E;
-    assign IFID_flush = PCSel_E;
+    assign IFID_stall = stall_D;
+    assign IFID_flush = PCSel_E || flush_E; // Flush IF/ID when branch taken or jump
 
     IF_ID_reg u_IF_ID_reg (
         .clk        (clk),
@@ -48,14 +174,60 @@ module RISCV_Pipeline (
 // ================================================================
 //  ID stage
 // ================================================================
+    assign opcode_eff = Instr_F[6:2];
+    assign funct7_fif = Instr_F[30];
+    assign funct3 = Instr_F[14:12];
+
 
     control_unit Control_logic_inst (
+        .opcode_eff (opcode_eff),
+        .funct7_fif (funct7_fif),
+        .funct3     (funct3),
+        .BrEq       (BrEq_E),
+        .BrLT       (BrLt_E),
+        .PCSel      (PCSel_E),
+        .Is_Branch  (Is_Branch),
+        .Is_Jump    (Is_Jump),
+        .Is_JALR    (Is_JALR),
+        .Is_Load    (Is_Load),
+        .UsesRs1    (UsesRs1),
+        .UsesRs2    (UsesRs2),
+        .ImmSel     (ImmSel),
+        .RegWEn     (RegWEn),
+        .BrUn       (BrUn),
+        .ASel       (ASel),
+        .BSel       (BSel),
+        .ALUSel     (ALUSel),
+        .MemRW      (MemRW),
+        .WBSel      (WBSel)
     );
+
+    // Connect control signals to ID-stage pipeline signals
+    assign ALUSel_D   = ALUSel;
+    assign WBSel_D    = WBSel;
+    assign RegWEn_D   = RegWEn;
+    assign BrUn_D     = BrUn;
+    assign ASel_D     = ASel;
+    assign BSel_D     = BSel;
+    assign MemRW_D    = MemRW;
+    assign Is_Branch_D= Is_Branch;
+    assign Is_Jump_D  = Is_Jump;
+    assign Is_JALR_D  = Is_JALR;
+    assign Is_Load_D  = Is_Load;
+    assign UsesRs1_D  = UsesRs1;
+    assign UsesRs2_D  = UsesRs2;
 
     Immediate_Generator Imm_Gen_inst (
+        .Inst    (Instr_D),
+        .ImmSel  (ImmSel),
+        .Imm     (Imm_D)
     );
 
-    // Mot instance duy nhat: doc o ID, ghi o WB
+    assign addrA_D = Instr_D[19:15];
+    assign addrB_D = Instr_D[24:20];
+    assign addrD_D = Instr_D[11:7];
+    assign funct3_D = Instr_D[14:12];
+
     RegisterFile Reg_inst (
         .clk       (clk),
         .reset     (rst_n),
@@ -134,10 +306,12 @@ module RISCV_Pipeline (
 //  EX stage
 // ================================================================
     forward_unit u_forward_unit (
-	
-	
-	
-	
+        .addrA_E  (addrA_E),
+        .addrB_E  (addrB_E),
+        .addrD_M  (addrD_M),
+        .addrD_W  (addrD_W),
+        .RegWEn_M (RegWEn_M),
+        .RegWEn_W (RegWEn_W),
         .fwdA     (fwdA),
         .fwdB     (fwdB)
     );
@@ -176,13 +350,13 @@ module RISCV_Pipeline (
     );
 
     // JALR phai xoa bit 0 cua dia chi dich
-    assign BrTarget_E = Is_JALR_E ? {ALU_out_E[31:1], 1'b0} : ALU_out_E;
+    assign Target_E = Is_JALR_E ? {ALU_out_E[31:1], 1'b0} : ALU_out_E;
 
     EX_MEM_reg u_EX_MEM_reg (
         .clk         (clk),
         .rst_n       (rst_n),
         .ALU_out_E   (ALU_out_E),
-        .DataB_fwd_E (OpB_fwd_E),      // du lieu store da qua forwarding
+        .DataB_fwd_E (fwd_DataB_E),      // du lieu store da qua forwarding
         .PC_Plus4_E  (PC_Plus4_E),
         .addrD_E     (addrD_E),
         .WBSel_E     (WBSel_E),

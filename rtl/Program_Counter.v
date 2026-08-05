@@ -1,6 +1,7 @@
 module Program_Counter (
     input wire        clk,
     input wire        rst_n,
+    input wire        stall,
     input wire [31:0] PC_in,
     output reg [31:0] PC_out
 );
@@ -8,8 +9,10 @@ module Program_Counter (
 always @(posedge clk or negedge rst_n) begin
     if (!rst_n)
         PC_out <= 32'b0;
-    else
+    else if (!stall)
         PC_out <= PC_in;
+    else 
+        PC_out <= PC_out; // Hold the current value when stalled
 end
 
 endmodule
