@@ -1,15 +1,10 @@
 // ================================================================
 //  RV32I 5-stage pipeline : IF | ID | EX | MEM | WB
-//  - Branch/jump resolve o EX  -> predict not-taken, phat 2 chu ky
-//  - Forwarding EX <- MEM/WB
-//  - Load-use hazard -> stall 1 chu ky
-//  - WB -> ID write-through bypass cho RegisterFile
 // ================================================================
 module RISCV_Pipeline (
     input  wire        clk,
     input  wire        rst_n
 );
-
 
 // ================================================================
 //  IF stage
