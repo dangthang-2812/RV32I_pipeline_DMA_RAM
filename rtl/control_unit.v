@@ -5,6 +5,12 @@ module control_unit (
     input wire       BrEq,
     input wire       BrLT,
     output wire      PCSel,
+    output wire      Is_Branch,
+    output wire      Is_Jump,
+    output wire      Is_JALR,
+    output wire      Is_Load,
+    output wire      UsesRs1,
+    output wire      UsesRs2,
     output wire [2:0] ImmSel,
     output wire      RegWEn,
     output wire      BrUn,
@@ -34,7 +40,13 @@ module control_unit (
         .WBSel      (WBSel),
         .arithmetic (arithmetic),
         .i_type     (i_type),
-        .pass_b     (pass_b)
+        .pass_b     (pass_b),
+        .Is_Branch  (Is_Branch),
+        .Is_Jump    (Is_Jump),
+        .Is_JALR    (Is_JALR),
+        .Is_Load    (Is_Load),
+        .UsesRs1    (UsesRs1),
+        .UsesRs2    (UsesRs2)
     );
 
     ALU_decoder ALU_decoder_inst (
