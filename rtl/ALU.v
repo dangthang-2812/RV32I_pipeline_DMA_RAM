@@ -15,7 +15,7 @@ module ALU(
     localparam SRA_OP = 4'h7;
     localparam SLT_OP = 4'h8;
 	localparam SLTU_OP = 4'h9;
-	localparam LUI_OP = 4'd10;
+	localparam PASS_B = 4'hA;
 
     always@(*) begin 
         case(ALU_Sel)
@@ -29,7 +29,7 @@ module ALU(
             SRA_OP: result = $signed(operand_0) >>> operand_1[4:0];
             SLT_OP: result = ($signed(operand_0) < $signed(operand_1));
 			SLTU_OP: result = operand_0 < operand_1;
-			LUI_OP: result = operand_1;
+			PASS_B: result = operand_1;
             default: result = 32'd0;
         endcase
     end

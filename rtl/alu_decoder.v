@@ -1,48 +1,41 @@
-// =========================================================
-// ALU DECODER
-// =========================================================
-module alu_decoder (
-    input  wire [1:0] ALUOp,
-    input  wire [2:0] funct3,
-    input  wire       funct7_fif,
-    input  wire [4:0] opcode_eff,    // // Used to different R-type vs I-type when ALUOp = 2'b10
-
-    output reg  [3:0] ALUSel
+module ALU_decoder (
+    input wire        arithmetic,
+    input wire        pass_b,
+    input wire [2:0]  funct3,
+    input wire        funct7_fif,
+    input wire        i_type,
+    output reg [3:0]  ALUSel
 );
-    localparam ADD    = 4'h0;
-    localparam SUB    = 4'h1;
-    localparam AND_OP = 4'h2;
-    localparam OR_OP  = 4'h3;
-    localparam XOR_OP = 4'h4;
-    localparam SLL_OP = 4'h5;
-    localparam SRL_OP = 4'h6;
-    localparam SRA_OP = 4'h7;
-    localparam SLT_OP = 4'h8;
-	localparam SLTU_OP = 4'h9;
-	localparam LUI_OP = 4'd10;
 
-    localparam OP_R = 5'b01100;
-
-    wire is_Rtype = (opcode_eff == OP_R);
+    localparam ADD     = 4'h0;
+    localparam SUB     = 4'h1;
+    localparam AND_OP  = 4'h2;
+    localparam OR_OP   = 4'h3;
+    localparam XOR_OP  = 4'h4;
+    localparam SLL_OP  = 4'h5;
+    localparam SRL_OP  = 4'h6;
+    localparam SRA_OP  = 4'h7;
+    localparam SLT_OP  = 4'h8;
+    localparam SLTU_OP = 4'h9;
+    localparam PASS_B  = 4'hA;
 
     always @(*) begin
-        case (ALUOp)
-            2'b00: ALUSel = ADD;   // always ADD
-            2'b01: begin // R-type or I-type ALU (OP_IMM)
-                case (funct3)
-                    3'b000:  ALUSel = (is_Rtype && funct7_fif) ? SUB : ADD; // ADD/ADDI/SUB
-                    3'b001:  ALUSel = SLL_OP;
-                    3'b010:  ALUSel = SLT_OP;
-                    3'b011:  ALUSel = SLTU_OP;    // SLTU/SLTIU
-                    3'b100:  ALUSel = XOR_OP;
-                    3'b101:  ALUSel = funct7_fif ? SRA_OP : SRL_OP; // SRL/SRA, SRLI/SRAI
-                    3'b110:  ALUSel = OR_OP;
-                    3'b111:  ALUSel = AND_OP;
-                    default: ALUSel = ADD;
-                endcase
-            end
-			2'b10: ALUSel = LUI_OP; 
-            default: ALUSel = ADD;
-        endcase
+        ALUSel = ADD;
+        if (pass_b) begin
+            ALUSel = PASS_B;
+        end else if (arithmetic) begin
+            case (funct3)
+                3'b000:  ALUSel = (!i_type && funct7_fif) ? SUB : ADD;
+                3'b001:  ALUSel = SLL_OP;
+                3'b010:  ALUSel = SLT_OP;
+                3'b011:  ALUSel = SLTU_OP;
+                3'b100:  ALUSel = XOR_OP;
+                3'b101:  ALUSel = funct7_fif ? SRA_OP : SRL_OP;
+                3'b110:  ALUSel = OR_OP;
+                3'b111:  ALUSel = AND_OP;
+                default: ALUSel = ADD;
+            endcase
+        end
     end
+
 endmodule
