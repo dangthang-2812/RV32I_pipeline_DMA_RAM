@@ -12,6 +12,8 @@ module RegisterFile (
 
 reg [31:0] registers [0:31];
 integer i;
+wire [31:0] read_dataA;
+wire [31:0] read_dataB;
 
 always @(posedge clk or negedge reset) begin
     if (!reset) begin
@@ -22,7 +24,10 @@ always @(posedge clk or negedge reset) begin
     end
 end
 
-assign dataA = (addrA == 5'd0) ? 32'b0 : registers[addrA];
-assign dataB = (addrB == 5'd0) ? 32'b0 : registers[addrB];
+assign read_dataA = (addrA == 5'd0) ? 32'b0 : registers[addrA];
+assign read_dataB = (addrB == 5'd0) ? 32'b0 : registers[addrB];
+
+assign dataA = (reg_write && (addrD == addrA) && (addrD != 5'd0)) ? dataD : read_dataA;
+assign dataB = (reg_write && (addrD == addrB) && (addrD != 5'd0)) ? dataD : read_dataB;
 
 endmodule
