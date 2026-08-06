@@ -4,5 +4,5 @@ module Instruction_Memory(
 );
 
     reg [31:0] memory [0:255];
-    assign inst = memory[addr[9:2]]; // 8-bit address for 256 words (32-bit each)
+    assign inst = memory[addr[7:0]]; // 8-bit address for 256 words (32-bit each)
 endmodule
