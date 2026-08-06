@@ -285,6 +285,8 @@ module RISCV_Pipeline (
         .Is_Jump_D   (Is_Jump_D),
         .Is_JALR_D   (Is_JALR_D),
         .Is_Load_D   (Is_Load_D),
+        .UsesRs1_D   (UsesRs1_D),
+        .UsesRs2_D   (UsesRs2_D),
         .PC_E        (PC_E),
         .PC_Plus4_E  (PC_Plus4_E),
         .Instr_E     (Instr_E),
