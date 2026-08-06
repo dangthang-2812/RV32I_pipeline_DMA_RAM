@@ -320,10 +320,10 @@ module RISCV_Pipeline (
         .fwdB     (fwdB)
     );
 
-    assign fwd_DataA_E = (fwdA == 2'b01) ? ALU_out_M :
-                       (fwdA == 2'b10) ? DataD_W   : DataA_E;
-    assign fwd_DataB_E = (fwdB == 2'b01) ? ALU_out_M :
-                       (fwdB == 2'b10) ? DataD_W   : DataB_E;
+    assign fwd_DataA_E = (fwdA == 2'b01) ? DataD_W :
+                       (fwdA == 2'b10) ?  ALU_out_M  : DataA_E;
+    assign fwd_DataB_E = (fwdB == 2'b01) ? DataD_W  :
+                       (fwdB == 2'b10) ? ALU_out_M  : DataB_E;
 
     assign ALU_inA_E = ASel_E ? PC_E  : fwd_DataA_E;
     assign ALU_inB_E = BSel_E ? Imm_E : fwd_DataB_E;
