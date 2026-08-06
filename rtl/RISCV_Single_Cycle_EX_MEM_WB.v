@@ -12,6 +12,7 @@ module RISCV_Pipeline (
     wire [31:0] PC_out_F;
     wire [31:0] PC_F;
     wire [31:0] Instr_F;
+    wire [31:0] PC_F_IMEM;
 
     //Wire for ID Stage
     wire [31:0] PC_D;
@@ -23,6 +24,8 @@ module RISCV_Pipeline (
     wire [4:0] addrD_D;
     wire [31:0] DataA_D;
     wire [31:0] DataB_D;
+    wire [31:0] DataA_D_RegFile;
+    wire [31:0] DataB_D_RegFile;
     wire [31:0] Imm_D;
     wire [2:0] funct3_D;
 
@@ -141,6 +144,7 @@ module RISCV_Pipeline (
     assign PC_Plus4_F  = PC_out_F + 32'd4;
     assign PC_in_F   = PCSel_E ? Target_E : PC_Plus4_F;
     assign PC_F      = PC_out_F;
+    assign PC_F_IMEM  = {2'b0, PC_out_F[31:2]}; // For IMEM address
 
     Program_Counter PC_inst (
         .clk    (clk),
@@ -151,7 +155,7 @@ module RISCV_Pipeline (
     );
 
     Instruction_Memory IMEM_inst (
-        .addr (PC_out_F),
+        .addr (PC_F_IMEM),
         .inst (Instr_F)
     );
 
@@ -233,9 +237,12 @@ module RISCV_Pipeline (
         .addrD     (addrD_W),
         .dataD     (DataD_W),
         .reg_write (RegWEn_W),
-        .dataA     (DataA_D),
-        .dataB     (DataB_D)
+        .dataA     (DataA_D_RegFile),
+        .dataB     (DataB_D_RegFile)
     );
+
+    assign DataA_D = (RegWEn_W && (addrD_W == addrA_D) && (addrD_W != 5'd0)) ? DataD_W : DataA_D_RegFile;
+    assign DataB_D = (RegWEn_W && (addrD_W == addrB_D) && (addrD_W != 5'd0)) ? DataD_W : DataB_D_RegFile;
 
     hazard_detect u_hazard_detect (
         .addrA_D   (addrA_D),
