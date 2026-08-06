@@ -63,6 +63,8 @@ module RISCV_Pipeline (
     wire       Is_Jump_E;
     wire       Is_JALR_E;
     wire       Is_Load_E;
+    wire       UsesRs1_E;
+    wire       UsesRs2_E;
 
     wire PCSel_E;
     wire [31:0] Target_E;
@@ -303,7 +305,9 @@ module RISCV_Pipeline (
         .Is_Branch_E (Is_Branch_E),
         .Is_Jump_E   (Is_Jump_E),
         .Is_JALR_E   (Is_JALR_E),
-        .Is_Load_E   (Is_Load_E)
+        .Is_Load_E   (Is_Load_E),
+        .UsesRs1_E   (UsesRs1_E),
+        .UsesRs2_E   (UsesRs2_E)
     );
 
 // ================================================================
@@ -317,7 +321,9 @@ module RISCV_Pipeline (
         .RegWEn_M (RegWEn_M),
         .RegWEn_W (RegWEn_W),
         .fwdA     (fwdA),
-        .fwdB     (fwdB)
+        .fwdB     (fwdB),
+        .UsesRs1_E(UsesRs1_E),
+        .UsesRs2_E(UsesRs2_E)
     );
 
     assign fwd_DataA_E = (fwdA == 2'b01) ? DataD_W :
