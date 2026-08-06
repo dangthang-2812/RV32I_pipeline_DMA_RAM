@@ -4,9 +4,6 @@
 module main_decoder (
     input  wire [4:0] opcode_eff,   // Instruction[6:2]
     input  wire [2:0] funct3,
-    input  wire       BrEq,         // Branch Equal
-    input  wire       BrLT,         // Branch Less Than
-    output reg        PCSel,        // PC select
     output reg  [2:0] ImmSel,
     output reg        RegWEn,
     output reg        BrUn,
@@ -49,7 +46,6 @@ module main_decoder (
     localparam WB_PC4 = 2'b10;
 
     always @(*) begin
-        PCSel = 1'b0;
         ImmSel = IMM_I;
         RegWEn = 1'b0;
         BrUn = 1'b0;
@@ -108,26 +104,9 @@ module main_decoder (
                 UsesRs1 = 1'b1;
                 UsesRs2 = 1'b1;
                 Is_Branch = 1'b1;
-
-                case (funct3)
-                    3'b000: PCSel = BrEq; // BEQ
-                    3'b001: PCSel = ~BrEq; // BNE
-                    3'b100: PCSel = BrLT; // BLT
-                    3'b101: PCSel = ~BrLT; // BGE
-                    3'b110: begin // BLTU
-                        PCSel = BrLT;
-                        BrUn = 1'b1;
-                    end
-                    3'b111: begin // BGEU
-                        PCSel = ~BrLT;
-                        BrUn = 1'b1;
-                    end
-                    default: PCSel = 1'b0;
-                endcase
             end
 
             OP_JAL: begin 
-                PCSel = 1'b1;
                 ImmSel = IMM_J;
                 RegWEn = 1'b1;
                 ASel = 1'b1;
@@ -138,7 +117,6 @@ module main_decoder (
 
             OP_JALR: begin 
                 if (funct3 == 3'b000) begin
-                    PCSel = 1'b1;
                     ImmSel = IMM_I;
                     RegWEn = 1'b1;
                     BSel = 1'b1;
