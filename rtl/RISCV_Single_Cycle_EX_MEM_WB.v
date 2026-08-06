@@ -151,7 +151,7 @@ module RISCV_Pipeline (
     );
 
     Instruction_Memory IMEM_inst (
-        .addr (PC_in_F),
+        .addr (PC_out_F),
         .inst (Instr_F)
     );
 
