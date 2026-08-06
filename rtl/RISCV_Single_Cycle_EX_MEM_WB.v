@@ -156,7 +156,7 @@ module RISCV_Pipeline (
     );
 
     assign IFID_stall = stall_D;
-    assign IFID_flush = PCSel_E || flush_E; // Flush IF/ID when branch taken or jump
+    assign IFID_flush = PCSel_E ; // Flush IF/ID when branch taken or jump
 
     IF_ID_reg u_IF_ID_reg (
         .clk        (clk),
