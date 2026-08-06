@@ -174,18 +174,15 @@ module RISCV_Pipeline (
 // ================================================================
 //  ID stage
 // ================================================================
-    assign opcode_eff = Instr_F[6:2];
-    assign funct7_fif = Instr_F[30];
-    assign funct3 = Instr_F[14:12];
+    assign opcode_eff = Instr_D[6:2];
+    assign funct7_fif = Instr_D[30];
+    assign funct3 = Instr_D[14:12];
 
 
     control_unit Control_logic_inst (
         .opcode_eff (opcode_eff),
         .funct7_fif (funct7_fif),
-        .funct3     (funct3),
-        .BrEq       (BrEq_E),
-        .BrLT       (BrLt_E),
-        .PCSel      (PCSel_E),
+        .funct3     (funct3),   
         .Is_Branch  (Is_Branch),
         .Is_Jump    (Is_Jump),
         .Is_JALR    (Is_JALR),
