@@ -6,14 +6,14 @@ module ID_EX_reg(
     input [3:0] ALUSel_D,
     input [1:0] WBSel_D,
     input       RegWEn_D, BrUn_D, ASel_D, BSel_D, MemRW_D,
-    input       Is_Branch_D, Is_Jump_D, Is_JALR_D, Is_Load_D,
+    input       Is_Branch_D, Is_Jump_D, Is_JALR_D, Is_Load_D,UsesRs1_D, UsesRs2_D,
     output reg [31:0] PC_E, PC_Plus4_E, Instr_E, DataA_E, DataB_E, Imm_E,
     output reg [4:0] addrA_E, addrB_E, addrD_E,
     output reg [2:0] funct3_E,
     output reg [3:0] ALUSel_E,
     output reg [1:0] WBSel_E,
     output reg       RegWEn_E, BrUn_E, ASel_E, BSel_E, MemRW_E,
-    output reg       Is_Branch_E, Is_Jump_E, Is_JALR_E, Is_Load_E
+    output reg       Is_Branch_E, Is_Jump_E, Is_JALR_E, Is_Load_E, UsesRs1_E, UsesRs2_E
 );
     always@(posedge clk or negedge rst_n) begin 
         if (~rst_n || bubble) begin 
@@ -38,6 +38,8 @@ module ID_EX_reg(
             Is_Jump_E <= 1'b0;
             Is_JALR_E <= 1'b0;
             Is_Load_E <= 1'b0;
+            UsesRs1_E <= 1'b0;
+            UsesRs2_E <= 1'b0;
         end else begin
             PC_E <= PC_D;
             PC_Plus4_E <= PC_Plus4_D;
@@ -60,6 +62,8 @@ module ID_EX_reg(
             Is_Jump_E   <= Is_Jump_D; 
             Is_JALR_E   <= Is_JALR_D; 
             Is_Load_E   <= Is_Load_D; 
+            UsesRs1_E   <= UsesRs1_D;
+            UsesRs2_E   <= UsesRs2_D;
         end
     end
 endmodule
