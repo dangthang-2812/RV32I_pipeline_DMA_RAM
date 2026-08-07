@@ -104,6 +104,9 @@ module main_decoder (
                 UsesRs1 = 1'b1;
                 UsesRs2 = 1'b1;
                 Is_Branch = 1'b1;
+                if (funct3 == 3'b111 || funct3 == 3'b110) begin
+                    BrUn = 1'b1;
+                end
             end
 
             OP_JAL: begin 
